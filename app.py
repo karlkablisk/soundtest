@@ -5,6 +5,9 @@ import os
 from elevenlabs import generate, voices
 from IPython.display import Audio
 
+# Unique key for the first text_input widget
+text_input_1 = st.text_input("KKL", key="KKL-soundtest")
+
 def split_text(text, limit=400):
     words = text.split()
     chunks = []
