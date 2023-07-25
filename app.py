@@ -25,10 +25,13 @@ def split_text(text, limit=400):
 
 def fetch_voicelist():
     try:
-        return voices()
+        voice_data = voices()
+        # Extract voice names from the voice data
+        return [voice.name for voice in voice_data]
     except:
         st.sidebar.warning("There was an issue loading the voice list. Defaulting to predefined list.")
         return ["Rachel", "Domi", "Bella", "Antoni", "Elli", "Josh", "Arnold", "Adam", "Sam"]
+
 
 def get_audio(text, voice="Bella", model="eleven_monolingual_v1", api_key=None):
     if api_key:
