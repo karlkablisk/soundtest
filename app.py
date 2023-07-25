@@ -2,20 +2,19 @@ import streamlit as st
 import json
 import os
 from elevenlabs import generate, play, voices
-from typing import List
 
-# Function to load API keys from a file
-def load_api_keys_from_file() -> List[str]:
+# Function to load API key from a file
+def load_api_key_from_file() -> str:
     try:
-        with open("api_keys.json", "r") as f:
-            return json.load(f)
+        with open("api_key.json", "r") as f:
+            return json.load(f).get('api_key', "")
     except FileNotFoundError:
-        return [""] * 5
+        return ""
 
-# Function to save API keys to a file
-def save_api_keys_to_file(api_keys: List[str]):
-    with open("api_keys.json", "w") as f:
-        json.dump(api_keys, f)
+# Function to save API key to a file
+def save_api_key_to_file(api_key: str):
+    with open("api_key.json", "w") as f:
+        json.dump({'api_key': api_key}, f)
 
 # Function to generate audio
 def get_audio(text, voice="Bella", model="eleven_monolingual_v1", api_key=None):
@@ -29,24 +28,18 @@ def get_audio(text, voice="Bella", model="eleven_monolingual_v1", api_key=None):
 # Display app title
 st.title('ElevenLabs Audio Generator')
 
-# Load API keys either from file or start with empty ones
-if 'streamlit' not in os.getcwd() and os.path.exists("api_keys.json"):
-    initial_api_keys = load_api_keys_from_file()
+# Load API key either from file or start with an empty one
+if 'streamlit' not in os.getcwd() and os.path.exists("api_key.json"):
+    initial_api_key = load_api_key_from_file()
 else:
-    initial_api_keys = [""] * 5
+    initial_api_key = ""
 
 # Sidebar for API key input
-api_key_labels = [f"API Key {i+1}" for i in range(5)]
-api_keys = [st.sidebar.text_input(label, value=initial_api_keys[i]) for i, label in enumerate(api_key_labels)]
-marked_keys = st.session_state.get("marked_keys", [False]*5)
+api_key = st.sidebar.text_input("API Key", value=initial_api_key)
 
-# Save API keys if not on Streamlit's cloud
+# Save API key if not on Streamlit's cloud
 if 'streamlit' not in os.getcwd():
-    save_api_keys_to_file(api_keys)
-
-# Manual API key selection
-options = ["NONE"] + [f"API Key {i+1}" for i in range(5)]
-selected_api_option = st.sidebar.selectbox("Manually select an API Key", options, index=0)
+    save_api_key_to_file(api_key)
 
 # Model selection dropdown
 model_mapping = {
@@ -62,42 +55,14 @@ selected_voice = st.selectbox('Select a voice:', voice_list)
 
 user_input = st.text_area('Enter/Paste your text here:', height=200)
 
-used_api_key = "NONE"  # Default as NONE
-
 if st.button('SPEAK') and user_input:
-    generated = False
-
-    # Use manually selected API key if it's valid and not "NONE"
-    if selected_api_option != "NONE":
-        api_idx = options.index(selected_api_option) - 1
-        if api_keys[api_idx] and not marked_keys[api_idx]:
-            audio = get_audio(user_input, selected_voice, selected_model, api_keys[api_idx])
-            if audio:
-                st.audio(audio, format='audio/wav', autoplay=True)
-                generated = True
-                used_api_key = selected_api_option
-            else:
-                marked_keys[api_idx] = True
-
-    # If manually selected API key failed or wasn't valid, or if "NONE" was selected, try the rest
-    if not generated:
-        for idx, api_key in enumerate(api_keys):
-            if api_key and not marked_keys[idx]:
-                audio = get_audio(user_input, selected_voice, selected_model, api_key)
-                if audio:
-                    st.audio(audio, format='audio/wav', autoplay=True)
-                    generated = True
-                    used_api_key = f"API Key {idx+1}"
-                    break
-                else:
-                    marked_keys[idx] = True
-
-    # If no valid API keys or they all failed
-    if not generated:
-        st.warning("No API key provided or all provided keys are exhausted. Cannot generate audio.")
-
-    # Print the API key that was used
-    st.write(f"Audio generated using: {used_api_key}")
-
-# Store marked keys to session state
-st.session_state["marked_keys"] = marked_keys
+    audio = get_audio(user_input, selected_voice, selected_model, api_key or None)
+    
+    if audio:
+        st.audio(audio, format='audio/wav', autoplay=True)
+        if api_key:
+            st.write(f"Audio generated using the provided API key.")
+        else:
+            st.write(f"Audio generated without an API key.")
+    else:
+        st.warning("Cannot generate audio. Please check the API key or try again.")
