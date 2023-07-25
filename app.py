@@ -95,7 +95,7 @@ if st.button('SPEAK') and user_input:
         if api_keys[api_idx] and not marked_keys[api_idx]:
             try:
                 audio = get_audio(user_input, selected_voice, selected_model, api_keys[api_idx])
-                st.audio(audio, format='audio/wav', autoplay=True)  # Audio set to autoplay
+                st.audio(audio, format='audio/wav', autoplay=True)
                 generated = True
                 used_api_key = selected_api_option
             except:
@@ -107,7 +107,7 @@ if st.button('SPEAK') and user_input:
             if api_key and not marked_keys[idx]:
                 try:
                     audio = get_audio(user_input, selected_voice, selected_model, api_key)
-                    st.audio(audio, format='audio/wav', autoplay=True)  # Audio set to autoplay
+                    st.audio(audio, format='audio/wav', autoplay=True)
                     generated = True
                     used_api_key = f"API Key {idx+1}"
                     break
@@ -116,4 +116,7 @@ if st.button('SPEAK') and user_input:
 
     # If no valid API keys, or they all failed
     if not generated:
-        st.warning("No API key provided or all provided keys are exhausted.
+        st.warning("No API key provided or all provided keys are exhausted. Cannot generate audio.")
+
+    # Print the API key that was used
+    st.write(f"Audio generated using: {used_api_key}")
